@@ -4,11 +4,9 @@
 /// implements the `SchedulingAlgorithm` trait in its own file.
 
 pub mod fcfs;
-pub mod priority;
 pub mod priority_preemptive;
 pub mod round_robin;
 pub mod sjf;
-pub mod srtf;
 
 use std::collections::VecDeque;
 
@@ -21,10 +19,8 @@ use crate::process::{PCB, ProcessState};
 pub enum Algorithm {
     FCFS,
     SJF,
-    SRTF,
     RoundRobin,
     Priority,
-    PriorityPreemptive,
 }
 
 impl Algorithm {
@@ -33,10 +29,8 @@ impl Algorithm {
         match index {
             0 => Algorithm::FCFS,
             1 => Algorithm::SJF,
-            2 => Algorithm::SRTF,
-            3 => Algorithm::RoundRobin,
-            4 => Algorithm::Priority,
-            5 => Algorithm::PriorityPreemptive,
+            2 => Algorithm::RoundRobin,
+            3 => Algorithm::Priority,
             _ => Algorithm::FCFS,
         }
     }
@@ -46,10 +40,8 @@ impl Algorithm {
         match self {
             Algorithm::FCFS => "FCFS",
             Algorithm::SJF => "SJF",
-            Algorithm::SRTF => "SRTF",
             Algorithm::RoundRobin => "Round Robin",
             Algorithm::Priority => "Prioridad",
-            Algorithm::PriorityPreemptive => "Prioridad Preemptivo",
         }
     }
 }
@@ -134,12 +126,8 @@ impl Scheduler {
         let algorithm: Box<dyn SchedulingAlgorithm> = match algo {
             Algorithm::FCFS => Box::new(fcfs::Fcfs),
             Algorithm::SJF => Box::new(sjf::Sjf),
-            Algorithm::SRTF => Box::new(srtf::Srtf),
             Algorithm::RoundRobin => Box::new(round_robin::RoundRobin),
-            Algorithm::Priority => Box::new(priority::PriorityNonPreemptive),
-            Algorithm::PriorityPreemptive => {
-                Box::new(priority_preemptive::PriorityPreemptive)
-            }
+            Algorithm::Priority => Box::new(priority_preemptive::PriorityPreemptive),
         };
 
         Scheduler {

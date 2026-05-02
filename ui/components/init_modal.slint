@@ -141,7 +141,7 @@ export component InitModal inherits Rectangle {
                     }
 
                     algo-combo := ComboBox {
-                        model: ["FCFS (First-Come, First-Served)", "SJF (Shortest Job First)", "SJF Preemptivo (SRTF)", "Round Robin", "Prioridad (no-preemptivo)", "Prioridad Preemptivo"];
+                        model: ["FCFS (First-Come, First-Served)", "SJF (Shortest Job First)", "Round Robin", "Prioridad"];
                         current-index: root.algorithm-index;
                         selected(val) => {
                             root.algorithm-index = self.current-index;
@@ -159,10 +159,10 @@ export component InitModal inherits Rectangle {
                             text: "⏱ QUANTUM (MS)";
                             font-size: KernelTypo.size-xs;
                             font-weight: 700;
-                            color: root.algorithm-index == 3 ? KernelColors.text-secondary : KernelColors.text-muted;
+                            color: root.algorithm-index == 2 ? KernelColors.text-secondary : KernelColors.text-muted;
                             letter-spacing: 1px;
                         }
-                        if root.algorithm-index != 3: Text {
+                        if root.algorithm-index != 2: Text {
                             text: "(APLICABLE PARA ROUND ROBIN)";
                             font-size: KernelTypo.size-xs;
                             color: KernelColors.text-muted;
@@ -175,13 +175,13 @@ export component InitModal inherits Rectangle {
                         border-radius: 2px;
                         border-width: 1px;
                         border-color: KernelColors.border-default;
-                        opacity: root.algorithm-index == 3 ? 1.0 : 0.4;
+                        opacity: root.algorithm-index == 2 ? 1.0 : 0.4;
 
                         quantum-spin := SpinBox {
                             value <=> root.quantum-value;
                             minimum: 1;
                             maximum: 200;
-                            enabled: root.algorithm-index == 3;
+                            enabled: root.algorithm-index == 2;
                         }
                     }
                 }

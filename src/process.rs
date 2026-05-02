@@ -6,33 +6,7 @@
 
 use rand::Rng;
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-/// PID of the system kernel daemon (always present).
-pub const SYS_KERNEL_PID: u32 = 0x00A1;
-
-/// Minimum CPU burst time for random generation (ms).
-pub const MIN_BURST: u32 = 5;
-/// Maximum CPU burst time for random generation (ms).
-pub const MAX_BURST: u32 = 50;
-
-/// Minimum priority value (highest priority).
-pub const MIN_PRIORITY: u8 = 1;
-/// Maximum priority value (lowest priority).
-pub const MAX_PRIORITY: u8 = 10;
-
-/// Minimum memory allocation for random generation (MB).
-pub const MIN_MEMORY: f32 = 16.0;
-/// Maximum memory allocation for random generation (MB).
-pub const MAX_MEMORY: f32 = 512.0;
-
-/// Probability that a running process requests I/O each tick.
-pub const IO_PROBABILITY: f64 = 0.15;
-
-/// Minimum I/O burst duration (ms).
-pub const MIN_IO_BURST: u32 = 5;
-/// Maximum I/O burst duration (ms).
-pub const MAX_IO_BURST: u32 = 20;
+use crate::constants::*;
 
 // ─── Process State ───────────────────────────────────────────────────────────
 

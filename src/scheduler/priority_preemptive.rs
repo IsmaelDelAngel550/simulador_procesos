@@ -53,24 +53,7 @@ impl SchedulingAlgorithm for PriorityPreemptive {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::process::ProcessState;
-
-    fn make_pcb(pid: u32, priority: u8) -> PCB {
-        PCB {
-            pid,
-            name: format!("P{}", pid),
-            state: ProcessState::Ready,
-            burst_time: 10,
-            remaining_time: 10,
-            arrival_time: 0,
-            priority,
-            memory_mb: 64.0,
-            io_burst: None,
-            finish_time: None,
-            turnaround_time: None,
-            waiting_time: None,
-        }
-    }
+    use crate::utils::test_helpers::make_pcb_with_priority as make_pcb;
 
     #[test]
     fn preempts_for_higher_priority() {

@@ -7,6 +7,8 @@ mod metrics;
 mod process;
 mod scheduler;
 mod simulation;
+mod utils;
+mod constants;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -360,9 +362,15 @@ fn main() -> Result<(), slint::PlatformError> {
         // Selection state is managed in the UI model for now
     });
 
-    // ── Exit App ─────────────────────────────────────────
-    ui.on_exit_app(move || {
-        slint::quit_event_loop().unwrap();
+    // ── Return to Init ───────────────────────────────────
+    let sim_clone = sim.clone();
+    let ui_weak = ui.as_weak();
+    ui.on_return_to_init(move || {
+        let mut sim_ref = sim_clone.borrow_mut();
+        *sim_ref = None;
+        if let Some(ui) = ui_weak.upgrade() {
+            ui.global::<SimState>().set_current_screen(0);
+        }
     });
 
     ui.run()

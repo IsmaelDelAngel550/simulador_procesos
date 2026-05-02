@@ -361,7 +361,7 @@ export component Dashboard inherits Rectangle {
                             }
 
                             // Quantum bar
-                            if quantum-max > 0: Rectangle {
+                            if algorithm-label == "Round Robin": Rectangle {
                                 height: 36px;
                                 background: KernelColors.bg-elevated;
                                 border-radius: 3px;

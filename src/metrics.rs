@@ -102,7 +102,7 @@ mod tests {
     use crate::process::ProcessState;
 
     fn make_terminated(arrival: u32, burst: u32, finish: u32) -> PCB {
-        let mut pcb = PCB {
+        let pcb = PCB {
             pid: 1,
             name: "test".to_string(),
             state: ProcessState::Terminated,

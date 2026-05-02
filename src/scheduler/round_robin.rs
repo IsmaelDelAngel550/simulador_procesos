@@ -36,24 +36,7 @@ impl SchedulingAlgorithm for RoundRobin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::process::ProcessState;
-
-    fn make_pcb(pid: u32, burst: u32) -> PCB {
-        PCB {
-            pid,
-            name: format!("P{}", pid),
-            state: ProcessState::Ready,
-            burst_time: burst,
-            remaining_time: burst,
-            arrival_time: 0,
-            priority: 5,
-            memory_mb: 64.0,
-            io_burst: None,
-            finish_time: None,
-            turnaround_time: None,
-            waiting_time: None,
-        }
-    }
+    use crate::utils::test_helpers::make_pcb;
 
     #[test]
     fn selects_first_in_queue() {
