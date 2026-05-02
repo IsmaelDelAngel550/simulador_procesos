@@ -1,0 +1,83 @@
+// ============================================
+// Component: HudCard
+// Reusable card with HUD-style corner decorations
+// ============================================
+
+import { KernelColors } from "../theme/colors.slint";
+import { KernelTypo } from "../theme/typography.slint";
+
+export component HudCard inherits Rectangle {
+    in property <string> title: "";
+    in property <bool> show-corners: true;
+    in property <length> corner-size: 12px;
+
+    background: KernelColors.bg-card;
+    border-radius: 2px;
+    border-width: 1px;
+    border-color: KernelColors.border-default;
+    clip: true;
+
+    // Top-left corner
+    if show-corners: Rectangle {
+        x: 0;
+        y: 0;
+        width: corner-size;
+        height: 2px;
+        background: KernelColors.accent-cyan;
+    }
+    if show-corners: Rectangle {
+        x: 0;
+        y: 0;
+        width: 2px;
+        height: corner-size;
+        background: KernelColors.accent-cyan;
+    }
+
+    // Top-right corner
+    if show-corners: Rectangle {
+        x: parent.width - corner-size;
+        y: 0;
+        width: corner-size;
+        height: 2px;
+        background: KernelColors.accent-cyan;
+    }
+    if show-corners: Rectangle {
+        x: parent.width - 2px;
+        y: 0;
+        width: 2px;
+        height: corner-size;
+        background: KernelColors.accent-cyan;
+    }
+
+    // Bottom-left corner
+    if show-corners: Rectangle {
+        x: 0;
+        y: parent.height - 2px;
+        width: corner-size;
+        height: 2px;
+        background: KernelColors.accent-cyan;
+    }
+    if show-corners: Rectangle {
+        x: 0;
+        y: parent.height - corner-size;
+        width: 2px;
+        height: corner-size;
+        background: KernelColors.accent-cyan;
+    }
+
+    // Bottom-right corner
+    if show-corners: Rectangle {
+        x: parent.width - corner-size;
+        y: parent.height - 2px;
+        width: corner-size;
+        height: 2px;
+        background: KernelColors.accent-cyan;
+    }
+    if show-corners: Rectangle {
+        x: parent.width - 2px;
+        y: parent.height - corner-size;
+        width: 2px;
+        height: corner-size;
+        background: KernelColors.accent-cyan;
+    }
+}

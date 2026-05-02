@@ -1,0 +1,167 @@
+// ============================================
+// Component: Sidebar
+// Navigation sidebar for screens 2-5
+// ============================================
+
+import { KernelColors } from "../theme/colors.slint";
+import { KernelTypo } from "../theme/typography.slint";
+import { SimState } from "../globals.slint";
+
+component SidebarItem inherits Rectangle {
+    in property <string> label: "";
+    in property <string> icon-text: "";
+    in property <bool> active: false;
+    callback clicked();
+
+    height: 40px;
+    background: active ? #38bdf815 : (touch.has-hover ? KernelColors.bg-hover : transparent);
+    border-radius: 4px;
+
+    animate background { duration: 150ms; }
+
+    // Active indicator
+    if active: Rectangle {
+        x: 0;
+        y: 4px;
+        width: 3px;
+        height: parent.height - 8px;
+        background: KernelColors.accent-cyan;
+        border-radius: 2px;
+    }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 12px;
+        spacing: 10px;
+        alignment: start;
+
+        Text {
+            text: icon-text;
+            font-size: KernelTypo.size-base;
+            color: active ? KernelColors.accent-cyan : KernelColors.text-secondary;
+            vertical-alignment: center;
+            width: 20px;
+        }
+
+        Text {
+            text: label;
+            font-size: KernelTypo.size-sm;
+            font-weight: active ? 700 : 400;
+            color: active ? KernelColors.accent-cyan : KernelColors.text-secondary;
+            vertical-alignment: center;
+            letter-spacing: 0.5px;
+        }
+    }
+
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component Sidebar inherits Rectangle {
+    in property <int> active-screen: 1;
+    callback navigate(int);
+
+    width: 200px;
+    background: KernelColors.bg-card;
+    border-width: 0;
+
+    // Right border
+    Rectangle {
+        x: parent.width - 1px;
+        y: 0;
+        width: 1px;
+        height: 100%;
+        background: KernelColors.border-default;
+    }
+
+    VerticalLayout {
+        padding: 16px;
+        padding-top: 20px;
+        spacing: 4px;
+
+        // Kernel OS branding
+        HorizontalLayout {
+            spacing: 10px;
+            padding-bottom: 16px;
+
+            Rectangle {
+                width: 32px;
+                height: 32px;
+                background: KernelColors.accent-cyan;
+                border-radius: 4px;
+
+                Text {
+                    text: "⬡";
+                    font-size: KernelTypo.size-lg;
+                    color: KernelColors.bg-deep;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+
+            VerticalLayout {
+                spacing: 2px;
+                Text {
+                    text: "KERNEL\\_OS";
+                    font-size: KernelTypo.size-sm;
+                    font-weight: 800;
+                    color: KernelColors.accent-cyan;
+                    letter-spacing: 1px;
+                }
+                Text {
+                    text: "ESTADO: Activo";
+                    font-size: KernelTypo.size-xs;
+                    color: KernelColors.accent-green;
+                }
+            }
+        }
+
+        // Separator
+        Rectangle { height: 1px; background: KernelColors.border-default; }
+        Rectangle { height: 8px; } // spacer
+
+        SidebarItem {
+            label: "DASHBOARD";
+            icon-text: "◉";
+            active: active-screen == 1;
+            clicked => { root.navigate(1); }
+        }
+
+        SidebarItem {
+            label: "PROCESOS";
+            icon-text: "☰";
+            active: active-screen == 2;
+            clicked => { root.navigate(2); }
+        }
+
+        SidebarItem {
+            label: "MEMORIA";
+            icon-text: "▦";
+            active: false;
+        }
+
+        SidebarItem {
+            label: "ESTADÍSTICAS CPU";
+            icon-text: "◈";
+            active: false;
+        }
+
+        SidebarItem {
+            label: "REGISTROS";
+            icon-text: "⊞";
+            active: false;
+        }
+
+        SidebarItem {
+            label: "HISTORIAL (GANTT)";
+            icon-text: "〰";
+            active: active-screen == 3;
+            clicked => { root.navigate(3); }
+        }
+
+        // Fill remaining space
+        Rectangle { }
+    }
+}

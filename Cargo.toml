@@ -1,0 +1,19 @@
+[package]
+name = "simulador-procesos"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+description = "KERNEL_OS — Simulador de Gestión de Procesos de Sistemas Operativos"
+
+[dependencies]
+slint = "1.16"
+rand = "0.8"
+
+[build-dependencies]
+slint-build = "1.16"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true

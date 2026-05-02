@@ -1,0 +1,49 @@
+// ============================================
+// Global Application State
+// Singleton accessible from all components
+// ============================================
+
+export global SimState {
+    // Screen routing: 0=init, 1=dashboard, 2=processes, 3=gantt
+    in-out property <int> current-screen: 0;
+
+    // Simulation control
+    in-out property <bool> sim-running: false;
+    in-out property <bool> sim-paused: false;
+    in-out property <bool> sim-completed: false;
+
+    // Speed multiplier (1, 2, 5, 10)
+    in-out property <int> speed: 1;
+
+    // Clock tick
+    in-out property <int> clock: 0;
+
+    // Header metrics
+    in-out property <float> cpu-load: 0;
+    in-out property <float> memory-used-mb: 0;
+    in-out property <int> total-processes: 0;
+    in-out property <int> alu-cycles: 0;
+
+    // Quantum info
+    in-out property <int> quantum-max: 50;
+    in-out property <int> quantum-remaining: 50;
+
+    // Algorithm label
+    in-out property <string> algorithm-label: "FCFS";
+
+    // Dashboard collapsed
+    in-out property <bool> panel-collapsed: false;
+
+    // Edit modal
+    in-out property <bool> show-edit-modal: false;
+    in-out property <int> edit-pid: 0;
+    in-out property <string> edit-pid-hex: "";
+    in-out property <string> edit-name: "";
+    in-out property <int> edit-burst: 0;
+    in-out property <int> edit-priority: 5;
+
+    // Process table pagination
+    in-out property <int> table-page: 0;
+    in-out property <int> table-page-size: 10;
+    in-out property <int> table-total: 0;
+}

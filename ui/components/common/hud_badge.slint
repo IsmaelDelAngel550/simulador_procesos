@@ -1,0 +1,67 @@
+// ============================================
+// Component: HudBadge
+// State badge with color and pulsating dot
+// ============================================
+
+import { KernelColors } from "../theme/colors.slint";
+import { KernelTypo } from "../theme/typography.slint";
+
+export component HudBadge inherits Rectangle {
+    // state: 0=New, 1=Ready, 2=Running, 3=Blocked, 4=Terminated
+    in property <int> state: 1;
+
+    property <color> state-color: state == 0 ? KernelColors.state-new :
+                                  state == 1 ? KernelColors.state-ready :
+                                  state == 2 ? KernelColors.state-running :
+                                  state == 3 ? KernelColors.state-blocked :
+                                  KernelColors.state-terminated;
+
+    property <string> state-label: state == 0 ? "NUEVO" :
+                                   state == 1 ? "LISTO" :
+                                   state == 2 ? "EJECUTANDO" :
+                                   state == 3 ? "ESPERANDO" :
+                                   "TERMINADO";
+
+    height: 24px;
+    min-width: 80px;
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: state-color;
+    background: state == 4 ? #21262d : state-color.transparentize(0.85);
+
+    HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        spacing: 5px;
+        alignment: center;
+
+        // Pulsating dot for active states
+        if state == 2 || state == 3: Rectangle {
+            width: 6px;
+            height: 6px;
+            border-radius: 3px;
+            background: state-color;
+            opacity: pulse-anim.running ? pulse-anim.value : 1.0;
+
+            pulse-anim := PropertyAnimation {
+            }
+        }
+
+        // Static dot for non-active states
+        if state != 2 && state != 3: Rectangle {
+            width: 6px;
+            height: 6px;
+            border-radius: 3px;
+            background: state-color;
+        }
+
+        Text {
+            text: state-label;
+            font-size: KernelTypo.size-xs;
+            font-weight: 700;
+            color: state == 4 ? KernelColors.text-muted : state-color;
+            letter-spacing: 0.5px;
+            vertical-alignment: center;
+        }
+    }
+}

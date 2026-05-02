@@ -1,0 +1,221 @@
+// ============================================
+// Component: InitModal
+// Pantalla 1 — Modal de inicialización del sistema
+// ============================================
+
+import { KernelColors } from "../theme/colors.slint";
+import { KernelTypo } from "../theme/typography.slint";
+import { SimState } from "../globals.slint";
+import { HudCard } from "common/hud_card.slint";
+import { HudButton } from "common/hud_button.slint";
+import { ComboBox, Slider, SpinBox } from "std-widgets.slint";
+
+export component InitModal inherits Rectangle {
+    in-out property <int> num-processes: 10;
+    in-out property <int> memory-capacity: 1024;
+    in-out property <int> algorithm-index: 0;
+    in-out property <int> quantum-value: 50;
+    callback start-simulation(int, int, int, int);
+
+    background: #000000cc;
+
+    // Center the modal
+    Rectangle {
+        width: 520px;
+        height: 560px;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+
+        HudCard {
+            width: 100%;
+            height: 100%;
+            show-corners: true;
+            corner-size: 20px;
+
+            VerticalLayout {
+                padding: 40px;
+                spacing: 20px;
+                alignment: start;
+
+                // Header
+                VerticalLayout {
+                    spacing: 8px;
+                    alignment: center;
+
+                    Text {
+                        text: "⚙ KERNEL\\_OS";
+                        font-size: KernelTypo.size-lg;
+                        font-weight: 700;
+                        color: KernelColors.accent-cyan;
+                        horizontal-alignment: center;
+                        letter-spacing: 2px;
+                    }
+
+                    Text {
+                        text: "INICIALIZACIÓN DEL SISTEMA";
+                        font-size: KernelTypo.size-2xl;
+                        font-weight: 800;
+                        color: KernelColors.text-primary;
+                        horizontal-alignment: center;
+                        letter-spacing: 1px;
+                    }
+
+                    Text {
+                        text: "ESTADO: ESPERANDO PARÁMETROS DE ARRANQUE";
+                        font-size: KernelTypo.size-xs;
+                        color: KernelColors.text-secondary;
+                        horizontal-alignment: center;
+                        letter-spacing: 1px;
+                    }
+                }
+
+                // Separator
+                Rectangle {
+                    height: 1px;
+                    background: KernelColors.border-default;
+                }
+
+                // Row 1: Processes & Memory
+                HorizontalLayout {
+                    spacing: 20px;
+
+                    VerticalLayout {
+                        spacing: 6px;
+                        Text {
+                            text: "⚡ PROCESOS INICIALES";
+                            font-size: KernelTypo.size-xs;
+                            font-weight: 700;
+                            color: KernelColors.text-secondary;
+                            letter-spacing: 1px;
+                        }
+                        Rectangle {
+                            height: 38px;
+                            background: KernelColors.bg-input;
+                            border-radius: 2px;
+                            border-width: 1px;
+                            border-color: KernelColors.border-default;
+
+                            proc-spin := SpinBox {
+                                value: root.num-processes;
+                                minimum: 2;
+                                maximum: 50;
+                                changed(val) => {
+                                    root.num-processes = val;
+                                }
+                            }
+                        }
+                    }
+
+                    VerticalLayout {
+                        spacing: 6px;
+                        Text {
+                            text: "≡ CAPACIDAD DE MEMORIA (MB)";
+                            font-size: KernelTypo.size-xs;
+                            font-weight: 700;
+                            color: KernelColors.text-secondary;
+                            letter-spacing: 1px;
+                        }
+                        Rectangle {
+                            height: 38px;
+                            background: KernelColors.bg-input;
+                            border-radius: 2px;
+                            border-width: 1px;
+                            border-color: KernelColors.border-default;
+
+                            mem-spin := SpinBox {
+                                value: root.memory-capacity;
+                                minimum: 256;
+                                maximum: 8192;
+                                changed(val) => {
+                                    root.memory-capacity = val;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Algorithm selector
+                VerticalLayout {
+                    spacing: 6px;
+
+                    Text {
+                        text: "⚙ ALGORITMO DE PLANIFICACIÓN";
+                        font-size: KernelTypo.size-xs;
+                        font-weight: 700;
+                        color: KernelColors.text-secondary;
+                        letter-spacing: 1px;
+                    }
+
+                    algo-combo := ComboBox {
+                        model: ["FCFS (First-Come, First-Served)", "SJF (Shortest Job First)", "SJF Preemptivo (SRTF)", "Round Robin", "Prioridad (no-preemptivo)", "Prioridad Preemptivo"];
+                        current-index: root.algorithm-index;
+                        selected(val) => {
+                            root.algorithm-index = self.current-index;
+                        }
+                    }
+                }
+
+                // Quantum
+                VerticalLayout {
+                    spacing: 6px;
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        Text {
+                            text: "⏱ QUANTUM (MS)";
+                            font-size: KernelTypo.size-xs;
+                            font-weight: 700;
+                            color: root.algorithm-index == 3 ? KernelColors.text-secondary : KernelColors.text-muted;
+                            letter-spacing: 1px;
+                        }
+                        if root.algorithm-index != 3: Text {
+                            text: "(APLICABLE PARA ROUND ROBIN)";
+                            font-size: KernelTypo.size-xs;
+                            color: KernelColors.text-muted;
+                        }
+                    }
+
+                    Rectangle {
+                        height: 38px;
+                        background: KernelColors.bg-input;
+                        border-radius: 2px;
+                        border-width: 1px;
+                        border-color: KernelColors.border-default;
+                        opacity: root.algorithm-index == 3 ? 1.0 : 0.4;
+
+                        quantum-spin := SpinBox {
+                            value: root.quantum-value;
+                            minimum: 1;
+                            maximum: 200;
+                            enabled: root.algorithm-index == 3;
+                            changed(val) => {
+                                root.quantum-value = val;
+                            }
+                        }
+                    }
+                }
+
+                // Separator
+                Rectangle {
+                    height: 1px;
+                    background: KernelColors.border-default;
+                }
+
+                // Start button
+                HudButton {
+                    text: "⏻  INICIAR SIMULACIÓN";
+                    primary: true;
+                    height: 48px;
+                    clicked => {
+                        root.start-simulation(
+                            root.num-processes,
+                            root.memory-capacity,
+                            root.algorithm-index,
+                            root.quantum-value
+                        );
+                    }
+                }
+            }
+        }
+    }
+}

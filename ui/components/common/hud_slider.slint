@@ -1,0 +1,62 @@
+// ============================================
+// Component: HudSlider
+// Slider with numeric display
+// ============================================
+
+import { KernelColors } from "../theme/colors.slint";
+import { KernelTypo } from "../theme/typography.slint";
+import { Slider } from "std-widgets.slint";
+
+export component HudSlider inherits Rectangle {
+    in property <string> label: "";
+    in-out property <float> value: 5;
+    in property <float> min-val: 1;
+    in property <float> max-val: 10;
+    callback changed(float);
+
+    height: 80px;
+
+    VerticalLayout {
+        spacing: 8px;
+
+        if label != "": Text {
+            text: root.label;
+            font-size: KernelTypo.size-xs;
+            font-weight: 700;
+            color: KernelColors.text-secondary;
+            letter-spacing: 1.5px;
+        }
+
+        HorizontalLayout {
+            spacing: 12px;
+
+            slider := Slider {
+                minimum: root.min-val;
+                maximum: root.max-val;
+                value: root.value;
+                changed(val) => {
+                    root.value = Math.round(val);
+                    root.changed(Math.round(val));
+                }
+            }
+
+            Rectangle {
+                width: 42px;
+                height: 32px;
+                background: KernelColors.bg-input;
+                border-radius: 2px;
+                border-width: 1px;
+                border-color: KernelColors.border-default;
+
+                Text {
+                    text: Math.round(root.value);
+                    font-size: KernelTypo.size-base;
+                    color: KernelColors.accent-cyan;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

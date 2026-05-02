@@ -1,0 +1,63 @@
+// ============================================
+// Component: HudInput
+// Stylized input field with HUD aesthetic
+// ============================================
+
+import { KernelColors } from "../theme/colors.slint";
+import { KernelTypo } from "../theme/typography.slint";
+import { LineEdit } from "std-widgets.slint";
+
+export component HudInput inherits Rectangle {
+    in property <string> label: "";
+    in property <string> suffix: "";
+    in-out property <string> value: "";
+    in property <bool> enabled: true;
+    in property <InputType> input-type: InputType.text;
+    callback edited(string);
+
+    height: 72px;
+
+    VerticalLayout {
+        spacing: 6px;
+
+        if label != "": Text {
+            text: root.label;
+            font-size: KernelTypo.size-xs;
+            font-weight: 700;
+            color: KernelColors.text-secondary;
+            letter-spacing: 1.5px;
+        }
+
+        Rectangle {
+            height: 38px;
+            background: KernelColors.bg-input;
+            border-radius: 2px;
+            border-width: 1px;
+            border-color: input.has-focus ? KernelColors.border-focus : KernelColors.border-default;
+            animate border-color { duration: 150ms; }
+
+            HorizontalLayout {
+                padding-left: 12px;
+                padding-right: 12px;
+
+                input := LineEdit {
+                    text: root.value;
+                    enabled: root.enabled;
+                    font-size: KernelTypo.size-base;
+                    input-type: root.input-type;
+                    edited(text) => {
+                        root.value = text;
+                        root.edited(text);
+                    }
+                }
+
+                if suffix != "": Text {
+                    text: root.suffix;
+                    font-size: KernelTypo.size-sm;
+                    color: KernelColors.text-muted;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

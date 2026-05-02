@@ -1,0 +1,548 @@
+// ============================================
+// Component: Dashboard
+// Pantalla 2 — Vista de simulación en tiempo real
+// Full layout: Header + Ready/Blocked queues + CPU + Terminated + Log + Footer
+// ============================================
+
+import { KernelColors } from "../../theme/colors.slint";
+import { KernelTypo } from "../../theme/typography.slint";
+import { SimState } from "../../globals.slint";
+import { ProcessItem, LogItem } from "../../structs.slint";
+import { HudCard } from "../common/hud_card.slint";
+import { HudButton } from "../common/hud_button.slint";
+import { ScrollView } from "std-widgets.slint";
+
+// ── Metric Card (Header) ─────────────────────────────────────────────────
+
+component MetricCard inherits HudCard {
+    in property <string> label: "";
+    in property <string> value-text: "";
+    in property <string> unit: "";
+    in property <color> accent: KernelColors.accent-cyan;
+
+    width: 160px;
+    height: 80px;
+    show-corners: false;
+
+    VerticalLayout {
+        padding: 12px;
+        spacing: 4px;
+
+        HorizontalLayout {
+            spacing: 6px;
+            Text {
+                text: "◉";
+                font-size: KernelTypo.size-xs;
+                color: accent;
+                vertical-alignment: center;
+            }
+            Text {
+                text: label;
+                font-size: KernelTypo.size-xs;
+                font-weight: 700;
+                color: KernelColors.text-secondary;
+                letter-spacing: 1px;
+                vertical-alignment: center;
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 4px;
+            alignment: start;
+
+            Text {
+                text: value-text;
+                font-size: KernelTypo.size-2xl;
+                font-weight: 800;
+                color: KernelColors.text-primary;
+                vertical-alignment: baseline;
+            }
+            Text {
+                text: unit;
+                font-size: KernelTypo.size-base;
+                color: KernelColors.text-secondary;
+                vertical-alignment: baseline;
+            }
+        }
+
+        // Accent bar
+        Rectangle {
+            height: 3px;
+            background: accent;
+            border-radius: 1px;
+            width: parent.width * 0.7;
+        }
+    }
+}
+
+// ── Process Queue Item ────────────────────────────────────────────────────
+
+component QueueItem inherits Rectangle {
+    in property <string> pid-hex: "";
+    in property <int> remaining: 0;
+
+    height: 36px;
+    background: KernelColors.bg-elevated;
+    border-radius: 2px;
+    border-width: 1px;
+    border-color: KernelColors.border-default;
+
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        spacing: 8px;
+
+        Text {
+            text: "▪";
+            font-size: KernelTypo.size-sm;
+            color: KernelColors.text-muted;
+            vertical-alignment: center;
+        }
+
+        Text {
+            text: "PID: " + pid-hex;
+            font-size: KernelTypo.size-sm;
+            color: KernelColors.text-primary;
+            vertical-alignment: center;
+        }
+
+        Rectangle { } // spacer
+
+        Text {
+            text: "BT: " + remaining + "ms";
+            font-size: KernelTypo.size-sm;
+            font-weight: 600;
+            color: KernelColors.accent-cyan;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// ── Dashboard Main ────────────────────────────────────────────────────────
+
+export component Dashboard inherits Rectangle {
+    in property <float> cpu-load: 0;
+    in property <float> memory-used: 0;
+    in property <int> total-processes: 0;
+    in property <[ProcessItem]> ready-queue: [];
+    in property <[ProcessItem]> blocked-queue: [];
+    in property <[ProcessItem]> terminated-list: [];
+    in property <[LogItem]> sys-log: [];
+    in property <ProcessItem> current-process;
+    in property <bool> has-current: false;
+    in property <int> quantum-max: 50;
+    in property <int> quantum-remaining: 50;
+    in property <int> clock: 0;
+    in property <string> algorithm-label: "FCFS";
+
+    background: KernelColors.bg-deep;
+
+    VerticalLayout {
+        spacing: 0;
+
+        // ── Header Bar ───────────────────────────────────────
+        Rectangle {
+            height: 100px;
+            background: KernelColors.bg-deep;
+
+            HorizontalLayout {
+                padding: 12px;
+                spacing: 12px;
+
+                MetricCard {
+                    label: "CARGA CPU";
+                    value-text: Math.round(cpu-load);
+                    unit: "%";
+                    accent: KernelColors.accent-cyan;
+                }
+
+                MetricCard {
+                    label: "MEMORIA";
+                    value-text: Math.round(memory-used / 102.4) / 10;
+                    unit: "GB";
+                    accent: KernelColors.accent-orange;
+                }
+
+                MetricCard {
+                    label: "PROCESOS";
+                    value-text: total-processes;
+                    unit: "Total";
+                    accent: KernelColors.accent-green;
+                }
+
+                Rectangle { } // spacer
+
+                HudButton {
+                    text: "✦ CONTRAER";
+                    width: 130px;
+                    height: 36px;
+                    vertical-alignment: center;
+                    clicked => {
+                        SimState.panel-collapsed = !SimState.panel-collapsed;
+                    }
+                }
+            }
+        }
+
+        // Separator
+        Rectangle { height: 1px; background: KernelColors.border-default; }
+
+        // ── Main Content Area ─────────────────────────────────
+        HorizontalLayout {
+            spacing: 0;
+
+            // ── Left Panel: Queues ───────────────────
+            Rectangle {
+                width: 260px;
+                background: KernelColors.bg-deep;
+
+                VerticalLayout {
+                    padding: 12px;
+                    spacing: 12px;
+
+                    // Ready Queue
+                    HudCard {
+                        show-corners: false;
+                        min-height: 180px;
+
+                        VerticalLayout {
+                            padding: 12px;
+                            spacing: 8px;
+
+                            HorizontalLayout {
+                                Text {
+                                    text: "● COLA LISTOS";
+                                    font-size: KernelTypo.size-sm;
+                                    font-weight: 700;
+                                    color: KernelColors.accent-green;
+                                    letter-spacing: 0.5px;
+                                }
+                                Rectangle { }
+                                Text {
+                                    text: "Q:" + ready-queue.length;
+                                    font-size: KernelTypo.size-sm;
+                                    color: KernelColors.text-muted;
+                                }
+                            }
+
+                            ScrollView {
+                                VerticalLayout {
+                                    spacing: 4px;
+                                    for proc in ready-queue: QueueItem {
+                                        pid-hex: proc.pid-hex;
+                                        remaining: proc.remaining-time;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Blocked Queue
+                    HudCard {
+                        show-corners: false;
+                        min-height: 140px;
+
+                        VerticalLayout {
+                            padding: 12px;
+                            spacing: 8px;
+
+                            HorizontalLayout {
+                                Text {
+                                    text: "● COLA BLOQUEADOS";
+                                    font-size: KernelTypo.size-sm;
+                                    font-weight: 700;
+                                    color: KernelColors.accent-yellow;
+                                    letter-spacing: 0.5px;
+                                }
+                                Rectangle { }
+                                Text {
+                                    text: "Q:" + blocked-queue.length;
+                                    font-size: KernelTypo.size-sm;
+                                    color: KernelColors.text-muted;
+                                }
+                            }
+
+                            ScrollView {
+                                VerticalLayout {
+                                    spacing: 4px;
+                                    for proc in blocked-queue: QueueItem {
+                                        pid-hex: proc.pid-hex;
+                                        remaining: proc.io-remaining;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Center Panel: CPU ────────────────────
+            Rectangle {
+                background: KernelColors.bg-deep;
+
+                VerticalLayout {
+                    alignment: center;
+                    padding: 20px;
+
+                    // Arrow indicator
+                    Text {
+                        text: "▷";
+                        font-size: KernelTypo.size-xl;
+                        color: KernelColors.text-muted;
+                        horizontal-alignment: center;
+                    }
+
+                    HudCard {
+                        show-corners: true;
+                        corner-size: 16px;
+                        height: 280px;
+                        max-width: 320px;
+
+                        // Dashed border effect
+                        border-width: 1px;
+                        border-color: KernelColors.border-accent;
+
+                        VerticalLayout {
+                            padding: 24px;
+                            spacing: 16px;
+                            alignment: center;
+
+                            // Status
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 8px;
+                                Rectangle {
+                                    width: 8px;
+                                    height: 8px;
+                                    border-radius: 4px;
+                                    background: has-current ? KernelColors.state-running : KernelColors.text-muted;
+                                }
+                                Text {
+                                    text: has-current ? "EJECUTANDO" : "CPU IDLE";
+                                    font-size: KernelTypo.size-sm;
+                                    font-weight: 700;
+                                    color: KernelColors.text-secondary;
+                                    letter-spacing: 1px;
+                                }
+                            }
+
+                            // PID display
+                            Text {
+                                text: has-current ? current-process.pid-hex : "---";
+                                font-size: KernelTypo.size-4xl;
+                                font-weight: 800;
+                                color: has-current ? KernelColors.accent-cyan : KernelColors.text-muted;
+                                horizontal-alignment: center;
+                            }
+
+                            // Burst remaining
+                            Rectangle {
+                                height: 36px;
+                                background: KernelColors.bg-elevated;
+                                border-radius: 3px;
+
+                                HorizontalLayout {
+                                    padding-left: 12px;
+                                    padding-right: 12px;
+                                    Text {
+                                        text: "Ráfaga Restante:";
+                                        font-size: KernelTypo.size-sm;
+                                        color: KernelColors.text-secondary;
+                                        vertical-alignment: center;
+                                    }
+                                    Rectangle { }
+                                    Text {
+                                        text: has-current ? current-process.remaining-time + "ms" : "—";
+                                        font-size: KernelTypo.size-sm;
+                                        font-weight: 700;
+                                        color: KernelColors.accent-cyan;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+
+                            // Quantum bar
+                            if quantum-max > 0: Rectangle {
+                                height: 36px;
+                                background: KernelColors.bg-elevated;
+                                border-radius: 3px;
+
+                                HorizontalLayout {
+                                    padding-left: 12px;
+                                    padding-right: 12px;
+                                    spacing: 8px;
+
+                                    Text {
+                                        text: "Quantum:";
+                                        font-size: KernelTypo.size-sm;
+                                        color: KernelColors.text-secondary;
+                                        vertical-alignment: center;
+                                    }
+
+                                    // Quantum segments
+                                    HorizontalLayout {
+                                        spacing: 3px;
+                                        alignment: center;
+
+                                        for i in quantum-max: Rectangle {
+                                            width: 12px;
+                                            height: 10px;
+                                            border-radius: 1px;
+                                            background: i < quantum-remaining ? KernelColors.accent-cyan : KernelColors.text-muted;
+                                            opacity: i < quantum-remaining ? 1.0 : 0.3;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Right Panel: Terminated + Log ────────
+            Rectangle {
+                width: 300px;
+                background: KernelColors.bg-deep;
+
+                VerticalLayout {
+                    padding: 12px;
+                    spacing: 12px;
+
+                    // Terminated list
+                    HudCard {
+                        show-corners: false;
+                        min-height: 160px;
+
+                        VerticalLayout {
+                            padding: 12px;
+                            spacing: 8px;
+
+                            HorizontalLayout {
+                                Text {
+                                    text: "● TERMINADOS";
+                                    font-size: KernelTypo.size-sm;
+                                    font-weight: 700;
+                                    color: KernelColors.accent-green;
+                                    letter-spacing: 0.5px;
+                                }
+                                Rectangle { }
+                                Text {
+                                    text: "Q:" + terminated-list.length;
+                                    font-size: KernelTypo.size-sm;
+                                    color: KernelColors.text-muted;
+                                }
+                            }
+
+                            ScrollView {
+                                VerticalLayout {
+                                    spacing: 4px;
+                                    for proc in terminated-list: Rectangle {
+                                        height: 30px;
+                                        background: KernelColors.bg-elevated;
+                                        border-radius: 2px;
+
+                                        HorizontalLayout {
+                                            padding-left: 10px;
+                                            padding-right: 10px;
+                                            spacing: 8px;
+                                            Text {
+                                                text: "✓";
+                                                font-size: KernelTypo.size-sm;
+                                                color: KernelColors.accent-green;
+                                                vertical-alignment: center;
+                                            }
+                                            Text {
+                                                text: "PID:" + proc.pid-hex;
+                                                font-size: KernelTypo.size-sm;
+                                                color: KernelColors.text-muted;
+                                                vertical-alignment: center;
+                                            }
+                                            Rectangle {}
+                                            Text {
+                                                text: proc.finish-time + "ms";
+                                                font-size: KernelTypo.size-sm;
+                                                color: KernelColors.text-muted;
+                                                vertical-alignment: center;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // SYS_LOG // TRACE
+                    HudCard {
+                        show-corners: false;
+
+                        VerticalLayout {
+                            padding: 12px;
+                            spacing: 8px;
+
+                            Text {
+                                text: "SYS\\_LOG // TRACE";
+                                font-size: KernelTypo.size-sm;
+                                font-weight: 700;
+                                color: KernelColors.text-secondary;
+                                letter-spacing: 0.5px;
+                            }
+
+                            ScrollView {
+                                min-height: 150px;
+
+                                VerticalLayout {
+                                    spacing: 4px;
+                                    for entry in sys-log: Rectangle {
+                                        min-height: 24px;
+
+                                        HorizontalLayout {
+                                            spacing: 6px;
+                                            padding-left: 4px;
+
+                                            Text {
+                                                text: "[" + entry.timestamp + "]";
+                                                font-size: KernelTypo.size-xs;
+                                                font-weight: 700;
+                                                color: KernelColors.accent-cyan;
+                                                vertical-alignment: center;
+                                            }
+                                            Text {
+                                                text: entry.message;
+                                                font-size: KernelTypo.size-xs;
+                                                color: KernelColors.text-secondary;
+                                                vertical-alignment: center;
+                                                wrap: word-wrap;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Footer ────────────────────────────────────────────
+        Rectangle {
+            height: 36px;
+            background: KernelColors.bg-card;
+            border-width: 1px;
+            border-color: KernelColors.border-default;
+
+            HorizontalLayout {
+                padding-left: 16px;
+                padding-right: 16px;
+                alignment: center;
+
+                Text {
+                    text: "ALU STATUS: OK | CYCLES: " + clock + " | " + algorithm-label;
+                    font-size: KernelTypo.size-xs;
+                    color: KernelColors.text-muted;
+                    letter-spacing: 1px;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

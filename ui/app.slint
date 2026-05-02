@@ -1,0 +1,225 @@
+// ============================================
+// KERNEL_OS — Main Application Window
+// Routes between screens and holds all state
+// ============================================
+
+import { KernelColors } from "theme/colors.slint";
+import { KernelTypo } from "theme/typography.slint";
+import { SimState } from "globals.slint";
+import { ProcessItem, LogItem, GanttItem, MetricsData } from "structs.slint";
+
+import { HudButton } from "components/common/hud_button.slint";
+import { InitModal } from "components/init_modal.slint";
+import { Dashboard } from "components/dashboard/dashboard.slint";
+import { Sidebar } from "components/sidebar.slint";
+import { ProcessTable } from "components/process_table/process_table.slint";
+import { EditModal } from "components/edit_modal.slint";
+import { GanttView } from "components/gantt/gantt_view.slint";
+
+export { SimState }
+
+export component AppWindow inherits Window {
+    title: "KERNEL\\_OS — Simulador de Procesos";
+    width: 1280px;
+    height: 800px;
+    background: KernelColors.bg-deep;
+
+    // ── Data Properties (Rust → UI) ──────────────────────
+    in property <[ProcessItem]> ready-queue: [];
+    in property <[ProcessItem]> blocked-queue: [];
+    in property <[ProcessItem]> terminated-list: [];
+    in property <[ProcessItem]> all-processes: [];
+    in property <[LogItem]> sys-log: [];
+    in property <[GanttItem]> gantt-entries: [];
+    in property <ProcessItem> current-process;
+    in property <bool> has-current-process: false;
+    in property <MetricsData> metrics;
+    in property <int> max-gantt-time: 50;
+
+    // ── Callbacks (UI → Rust) ────────────────────────────
+    callback start-simulation(int, int, int, int);
+    callback pause-simulation();
+    callback resume-simulation();
+    callback step-simulation();
+    callback reset-simulation();
+    callback change-speed(int);
+    callback edit-process(int, string, int, int);
+    callback delete-process(int);
+    callback request-edit(int);
+    callback toggle-select(int);
+
+    // ── Layout ───────────────────────────────────────────
+
+    VerticalLayout {
+        // Top bar (visible when not on init screen)
+        if SimState.current-screen > 0: Rectangle {
+            height: 48px;
+            background: KernelColors.bg-card;
+            border-width: 0;
+
+            Rectangle {
+                y: parent.height - 1px;
+                height: 1px;
+                background: KernelColors.border-default;
+            }
+
+            HorizontalLayout {
+                padding-left: 16px;
+                padding-right: 16px;
+                spacing: 12px;
+
+                Text {
+                    text: "SIMULADOR\\_SISTEMA";
+                    font-size: KernelTypo.size-lg;
+                    font-weight: 800;
+                    color: KernelColors.accent-cyan;
+                    letter-spacing: 1px;
+                    vertical-alignment: center;
+                }
+
+                Rectangle { } // spacer
+
+                // Simulation controls
+                HudButton {
+                    text: "▶";
+                    width: 40px;
+                    height: 32px;
+                    primary: !SimState.sim-running;
+                    clicked => {
+                        if SimState.sim-running {
+                            root.pause-simulation();
+                        } else {
+                            root.resume-simulation();
+                        }
+                    }
+                }
+
+                HudButton {
+                    text: "⏸";
+                    width: 40px;
+                    height: 32px;
+                    clicked => { root.pause-simulation(); }
+                }
+
+                HudButton {
+                    text: "⏭";
+                    width: 40px;
+                    height: 32px;
+                    clicked => { root.step-simulation(); }
+                }
+
+                // Speed selector
+                HudButton {
+                    text: SimState.speed + "x";
+                    width: 50px;
+                    height: 32px;
+                    clicked => {
+                        if SimState.speed == 1 { root.change-speed(2); }
+                        else if SimState.speed == 2 { root.change-speed(5); }
+                        else if SimState.speed == 5 { root.change-speed(10); }
+                        else { root.change-speed(1); }
+                    }
+                }
+
+                HudButton {
+                    text: "REINICIAR";
+                    height: 32px;
+                    min-width: 90px;
+                    clicked => { root.reset-simulation(); }
+                }
+
+                HudButton {
+                    text: SimState.sim-running ? "PAUSAR" : "EJECUTAR";
+                    height: 32px;
+                    min-width: 90px;
+                    primary: true;
+                    clicked => {
+                        if SimState.sim-running {
+                            root.pause-simulation();
+                        } else {
+                            root.resume-simulation();
+                        }
+                    }
+                }
+            }
+        }
+
+        // Main content area
+        HorizontalLayout {
+            // Sidebar (visible on screens 2, 3)
+            if SimState.current-screen > 0: Sidebar {
+                active-screen: SimState.current-screen;
+                navigate(screen) => {
+                    SimState.current-screen = screen;
+                }
+            }
+
+            // Content area
+            Rectangle {
+                background: KernelColors.bg-deep;
+
+                // Screen 1: Dashboard
+                if SimState.current-screen == 1: Dashboard {
+                    cpu-load: SimState.cpu-load;
+                    memory-used: SimState.memory-used-mb;
+                    total-processes: SimState.total-processes;
+                    ready-queue: root.ready-queue;
+                    blocked-queue: root.blocked-queue;
+                    terminated-list: root.terminated-list;
+                    sys-log: root.sys-log;
+                    current-process: root.current-process;
+                    has-current: root.has-current-process;
+                    quantum-max: SimState.quantum-max > 10 ? 10 : SimState.quantum-max;
+                    quantum-remaining: SimState.quantum-remaining > 10 ? 10 : SimState.quantum-remaining;
+                    clock: SimState.clock;
+                    algorithm-label: SimState.algorithm-label;
+                }
+
+                // Screen 2: Process Table
+                if SimState.current-screen == 2: ProcessTable {
+                    processes: root.all-processes;
+                    page: SimState.table-page;
+                    page-size: SimState.table-page-size;
+                    total-count: SimState.table-total;
+                    edit-process(pid) => { root.request-edit(pid); }
+                    delete-process(pid) => { root.delete-process(pid); }
+                    toggle-select(pid) => { root.toggle-select(pid); }
+                    next-page => { SimState.table-page = SimState.table-page + 1; }
+                    prev-page => { SimState.table-page = Math.max(0, SimState.table-page - 1); }
+                }
+
+                // Screen 3: Gantt View
+                if SimState.current-screen == 3: GanttView {
+                    metrics: root.metrics;
+                    gantt-entries: root.gantt-entries;
+                    terminated: root.terminated-list;
+                    max-time: root.max-gantt-time;
+                    algorithm-label: SimState.algorithm-label;
+                }
+            }
+        }
+    }
+
+    // ── Overlays ─────────────────────────────────────────
+
+    // Init Modal (Screen 0)
+    if SimState.current-screen == 0: InitModal {
+        start-simulation(procs, mem, algo, quantum) => {
+            root.start-simulation(procs, mem, algo, quantum);
+        }
+    }
+
+    // Edit Modal
+    if SimState.show-edit-modal: EditModal {
+        process-pid: SimState.edit-pid;
+        process-pid-hex: SimState.edit-pid-hex;
+        process-name: SimState.edit-name;
+        process-burst: SimState.edit-burst;
+        process-priority: SimState.edit-priority;
+        save(pid, name, burst, priority) => {
+            root.edit-process(pid, name, burst, priority);
+            SimState.show-edit-modal = false;
+        }
+        cancel => { SimState.show-edit-modal = false; }
+    }
+}

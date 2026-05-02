@@ -1,0 +1,44 @@
+// ============================================
+// Shared Data Structs
+// Used by both Slint components and Rust bridge
+// ============================================
+
+export struct ProcessItem {
+    pid: int,
+    pid-hex: string,
+    name: string,
+    state: int,
+    priority: int,
+    priority-label: string,
+    arrival-time: int,
+    burst-time: int,
+    remaining-time: int,
+    memory-mb: float,
+    io-remaining: int,
+    finish-time: int,
+    turnaround-time: int,
+    waiting-time: int,
+    selected: bool,
+}
+
+export struct LogItem {
+    timestamp: int,
+    message: string,
+}
+
+export struct GanttItem {
+    pid: int,
+    pid-label: string,
+    start-time: int,
+    end-time: int,
+    color-index: int,
+}
+
+export struct MetricsData {
+    total-time: int,
+    cpu-utilization: float,
+    avg-waiting: float,
+    avg-turnaround: float,
+    delta-waiting: float,
+    delta-turnaround: float,
+}

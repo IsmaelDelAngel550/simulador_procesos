@@ -1,0 +1,62 @@
+// ============================================
+// Component: HudButton
+// Stylized button with HUD aesthetic
+// ============================================
+
+import { KernelColors } from "../theme/colors.slint";
+import { KernelTypo } from "../theme/typography.slint";
+
+export component HudButton inherits Rectangle {
+    in property <string> text: "";
+    in property <bool> primary: false;
+    in property <bool> enabled: true;
+    in property <image> icon;
+    in property <bool> has-icon: false;
+    callback clicked();
+
+    height: 36px;
+    min-width: 100px;
+    border-radius: 2px;
+    border-width: 1px;
+    border-color: enabled ? (primary ? KernelColors.accent-cyan : KernelColors.border-default) : KernelColors.text-muted;
+    background: enabled ? (
+        touch.pressed ? KernelColors.bg-deep :
+        touch.has-hover ? (primary ? #38bdf830 : KernelColors.bg-hover) :
+        (primary ? #38bdf815 : KernelColors.bg-card)
+    ) : KernelColors.bg-card;
+
+    animate background { duration: 150ms; easing: ease-in-out; }
+    animate border-color { duration: 150ms; easing: ease-in-out; }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        spacing: 6px;
+        alignment: center;
+
+        if has-icon: Image {
+            source: icon;
+            width: 14px;
+            height: 14px;
+            colorize: enabled ? (primary ? KernelColors.accent-cyan : KernelColors.text-secondary) : KernelColors.text-muted;
+        }
+
+        Text {
+            text: root.text;
+            font-size: KernelTypo.size-sm;
+            font-weight: 600;
+            color: enabled ? (primary ? KernelColors.accent-cyan : KernelColors.text-primary) : KernelColors.text-muted;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            letter-spacing: 1px;
+        }
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: enabled ? pointer : default;
+        clicked => {
+            root.clicked();
+        }
+    }
+}

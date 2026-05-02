@@ -1,0 +1,222 @@
+// ============================================
+// Component: GanttView
+// Pantalla 5 — Historial de ejecución GANTT
+// ============================================
+
+import { KernelColors } from "../../theme/colors.slint";
+import { KernelTypo } from "../../theme/typography.slint";
+import { ProcessItem, GanttItem, MetricsData } from "../../structs.slint";
+import { HudCard } from "../common/hud_card.slint";
+import { ScrollView } from "std-widgets.slint";
+
+component GanttBar inherits Rectangle {
+    in property <int> start-x: 0;
+    in property <int> bar-width: 0;
+    in property <int> duration: 0;
+    in property <int> color-idx: 0;
+
+    property <color> bar-color:
+        color-idx == 0 ? KernelColors.gantt-1 :
+        color-idx == 1 ? KernelColors.gantt-2 :
+        color-idx == 2 ? KernelColors.gantt-3 :
+        color-idx == 3 ? KernelColors.gantt-4 :
+        color-idx == 4 ? KernelColors.gantt-5 :
+        color-idx == 5 ? KernelColors.gantt-6 :
+        color-idx == 6 ? KernelColors.gantt-7 :
+        color-idx == 7 ? KernelColors.gantt-8 :
+        color-idx == 8 ? KernelColors.gantt-9 :
+        KernelColors.gantt-10;
+
+    height: 28px;
+    x: start-x * 1px;
+    width: Math.max(bar-width * 1px, 20px);
+    background: bar-color;
+    border-radius: 3px;
+
+    Text {
+        text: duration + "ms";
+        font-size: 10px;
+        font-weight: 700;
+        color: #000000;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+export component GanttView inherits Rectangle {
+    in property <MetricsData> metrics;
+    in property <[GanttItem]> gantt-entries: [];
+    in property <[ProcessItem]> terminated: [];
+    in property <int> max-time: 50;
+    in property <string> algorithm-label: "FCFS";
+
+    property <int> px-per-ms: 8;
+
+    background: KernelColors.bg-deep;
+
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+
+        // Header
+        HorizontalLayout {
+            spacing: 12px;
+
+            VerticalLayout {
+                spacing: 4px;
+                HorizontalLayout {
+                    spacing: 8px;
+                    Text { text: "〰"; font-size: 20px; color: KernelColors.accent-cyan; vertical-alignment: center; }
+                    Text { text: "HISTORIAL DE EJECUCIÓN (GANTT)"; font-size: 20px; font-weight: 800; color: KernelColors.text-primary; letter-spacing: 1px; vertical-alignment: center; }
+                }
+                Text { text: "● TIEMPO REAL: SIMULACIÓN COMPLETADA EN T=" + metrics.total-time + "ms"; font-size: 11px; color: KernelColors.accent-green; letter-spacing: 0.5px; }
+            }
+
+            Rectangle { }
+
+            // Time/CPU cards
+            HudCard {
+                width: 120px; height: 60px; show-corners: false;
+                VerticalLayout {
+                    padding: 8px; spacing: 2px;
+                    Text { text: "TIEMPO TOTAL"; font-size: 9px; color: KernelColors.text-muted; letter-spacing: 1px; }
+                    Text { text: metrics.total-time + " ms"; font-size: 18px; font-weight: 800; color: KernelColors.text-primary; }
+                }
+            }
+            HudCard {
+                width: 120px; height: 60px; show-corners: false;
+                VerticalLayout {
+                    padding: 8px; spacing: 2px;
+                    Text { text: "CPU UTILIZACIÓN"; font-size: 9px; color: KernelColors.text-muted; letter-spacing: 1px; }
+                    Text { text: Math.round(metrics.cpu-utilization * 10) / 10 + "%"; font-size: 18px; font-weight: 800; color: KernelColors.accent-cyan; }
+                }
+            }
+        }
+
+        // Metrics cards row
+        HorizontalLayout {
+            spacing: 12px;
+
+            HudCard {
+                show-corners: true; corner-size: 10px; height: 90px;
+                VerticalLayout {
+                    padding: 14px; spacing: 4px;
+                    Text { text: "TIEMPO ESPERA PROMEDIO"; font-size: 10px; color: KernelColors.text-muted; letter-spacing: 1px; }
+                    HorizontalLayout {
+                        spacing: 4px;
+                        Text { text: Math.round(metrics.avg-waiting * 10) / 10; font-size: 28px; font-weight: 800; color: KernelColors.text-primary; }
+                        Text { text: "ms"; font-size: 14px; color: KernelColors.text-secondary; vertical-alignment: baseline; }
+                    }
+                    Text {
+                        text: (metrics.delta-waiting >= 0 ? "↑ " : "↓ ") + Math.round(Math.abs(metrics.delta-waiting) * 10) / 10 + "ms vs iteración anterior";
+                        font-size: 10px;
+                        color: metrics.delta-waiting >= 0 ? KernelColors.accent-red : KernelColors.accent-green;
+                    }
+                }
+            }
+
+            HudCard {
+                show-corners: true; corner-size: 10px; height: 90px;
+                VerticalLayout {
+                    padding: 14px; spacing: 4px;
+                    Text { text: "TIEMPO RETORNO PROMEDIO"; font-size: 10px; color: KernelColors.text-muted; letter-spacing: 1px; }
+                    HorizontalLayout {
+                        spacing: 4px;
+                        Text { text: Math.round(metrics.avg-turnaround * 10) / 10; font-size: 28px; font-weight: 800; color: KernelColors.text-primary; }
+                        Text { text: "ms"; font-size: 14px; color: KernelColors.text-secondary; vertical-alignment: baseline; }
+                    }
+                    Text {
+                        text: (metrics.delta-turnaround >= 0 ? "↑ " : "↓ ") + Math.round(Math.abs(metrics.delta-turnaround) * 10) / 10 + "ms vs iteración anterior";
+                        font-size: 10px;
+                        color: metrics.delta-turnaround >= 0 ? KernelColors.accent-red : KernelColors.accent-green;
+                    }
+                }
+            }
+
+            Rectangle { }
+        }
+
+        // Gantt Chart
+        HudCard {
+            show-corners: true; corner-size: 12px;
+            VerticalLayout {
+                padding: 16px; spacing: 8px;
+                Text { text: "VISUALIZADOR GANTT - PLANIFICADOR " + algorithm-label; font-size: 12px; font-weight: 700; color: KernelColors.text-secondary; letter-spacing: 0.5px; }
+
+                ScrollView {
+                    min-height: 200px;
+                    VerticalLayout {
+                        spacing: 6px;
+                        for entry in gantt-entries: HorizontalLayout {
+                            spacing: 4px;
+                            height: 32px;
+                            Text { text: entry.pid-label; font-size: 11px; color: KernelColors.text-secondary; width: 40px; vertical-alignment: center; }
+                            GanttBar {
+                                start-x: entry.start-time * root.px-per-ms;
+                                bar-width: (entry.end-time - entry.start-time) * root.px-per-ms;
+                                duration: entry.end-time - entry.start-time;
+                                color-idx: entry.color-index;
+                            }
+                        }
+                    }
+                }
+
+                // Time axis
+                HorizontalLayout {
+                    padding-left: 44px;
+                    spacing: 0;
+                    for i in Math.min(max-time / 5 + 1, 20): Text {
+                        text: i * 5;
+                        font-size: 9px;
+                        color: KernelColors.text-muted;
+                        width: 5 * root.px-per-ms * 1px;
+                    }
+                }
+            }
+        }
+
+        // Metrics table
+        HudCard {
+            show-corners: false;
+            VerticalLayout {
+                padding: 16px; spacing: 8px;
+                Text { text: "MÉTRICAS DETALLADAS POR PROCESO"; font-size: 12px; font-weight: 700; color: KernelColors.text-secondary; letter-spacing: 0.5px; }
+
+                // Header
+                Rectangle {
+                    height: 36px; background: KernelColors.bg-elevated; border-radius: 2px;
+                    HorizontalLayout {
+                        padding-left: 12px; padding-right: 12px;
+                        Rectangle { width: 70px; Text { text: "PID"; font-size: 10px; font-weight: 700; color: KernelColors.text-muted; letter-spacing: 1px; vertical-alignment: center; } }
+                        Rectangle { width: 100px; Text { text: "Llegada (ms)"; font-size: 10px; font-weight: 700; color: KernelColors.text-muted; vertical-alignment: center; } }
+                        Rectangle { width: 120px; Text { text: "Ráfaga CPU (ms)"; font-size: 10px; font-weight: 700; color: KernelColors.text-muted; vertical-alignment: center; } }
+                        Rectangle { width: 140px; Text { text: "T. Finalización (ms)"; font-size: 10px; font-weight: 700; color: KernelColors.text-muted; vertical-alignment: center; } }
+                        Rectangle { width: 120px; Text { text: "T. Retorno (ms)"; font-size: 10px; font-weight: 700; color: KernelColors.text-muted; vertical-alignment: center; } }
+                        Rectangle { Text { text: "T. Espera (ms)"; font-size: 10px; font-weight: 700; color: KernelColors.text-muted; vertical-alignment: center; } }
+                    }
+                }
+
+                // Rows
+                ScrollView {
+                    min-height: 100px;
+                    VerticalLayout {
+                        spacing: 0;
+                        for proc in terminated: Rectangle {
+                            height: 36px;
+                            Rectangle { y: self.height - 1px; height: 1px; background: KernelColors.border-default; }
+                            HorizontalLayout {
+                                padding-left: 12px; padding-right: 12px;
+                                Rectangle { width: 70px; Text { text: proc.pid-hex; font-size: 12px; color: KernelColors.text-primary; font-weight: 600; vertical-alignment: center; } }
+                                Rectangle { width: 100px; Text { text: proc.arrival-time; font-size: 12px; color: KernelColors.text-secondary; vertical-alignment: center; } }
+                                Rectangle { width: 120px; Text { text: proc.burst-time; font-size: 12px; color: KernelColors.text-secondary; vertical-alignment: center; } }
+                                Rectangle { width: 140px; Text { text: proc.finish-time; font-size: 12px; color: KernelColors.text-secondary; vertical-alignment: center; } }
+                                Rectangle { width: 120px; Text { text: proc.turnaround-time; font-size: 12px; color: KernelColors.accent-cyan; font-weight: 700; vertical-alignment: center; } }
+                                Rectangle { Text { text: proc.waiting-time; font-size: 12px; color: KernelColors.accent-cyan; font-weight: 700; vertical-alignment: center; } }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
