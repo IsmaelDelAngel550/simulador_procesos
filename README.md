@@ -17,42 +17,7 @@ Un simulador básico de un gestor de procesos desarrollado en Rust que emula el 
 
 ## Estructura del Repositorio
 ```text
-simulador-gestor-procesos/
-├── README.md
-├── Cargo.toml
-├── .gitignore
-├── LICENSE
-├── src/
-│   ├── main.rs
-│   ├── lib.rs
-│   ├── core/
-│   │   ├── mod.rs
-│   │   ├── process.rs
-│   │   ├── scheduler.rs
-│   │   └── resource.rs
-│   ├── ipc/
-│   │   ├── mod.rs
-│   │   ├── channel.rs
-│   │   └── semaphore.rs
-│   └── ui/
-│       ├── mod.rs
-│       ├── cli.rs
-│       └── logger.rs
-├── tests/
-│   ├── scheduler_tests.rs
-│   ├── resource_tests.rs
-│   └── ipc_tests.rs
-├── examples/
-│   ├── productor_consumidor.rs
-│   └── round_robin_demo.rs
-├── docs/
-│   ├── entregable_final.pdf
-│   └── diagrama_estados.png
-├── capturas/
-│   ├── screenshot01.png
-│   └── screenshot_n.png
-└── benches/
-    └── scheduler_bench.rs
+
 ```
 ## 🛠️ Características Principales
 
